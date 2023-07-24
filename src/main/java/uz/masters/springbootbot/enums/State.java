@@ -4,5 +4,6 @@ public enum State {
     FULLNAME,
     SENDBIRTHDAYSFILE,
     REGISTERED,
-    OK
+    OK,
+    INPUTNBIRTHDAY,
 }

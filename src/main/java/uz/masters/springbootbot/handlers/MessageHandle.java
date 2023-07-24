@@ -4,7 +4,9 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import uz.masters.springbootbot.bot.TugBot;
 import uz.masters.springbootbot.entity.AuthUser;
+import uz.masters.springbootbot.entity.Birthdays;
 import uz.masters.springbootbot.enums.State;
+import uz.masters.springbootbot.repository.BirthDaysRepository;
 import uz.masters.springbootbot.services.AuthUserService;
 
 @Service
@@ -12,11 +14,13 @@ public class MessageHandle {
 
     private final TugBot bot;
     private final AuthUserService authUserService;
+    private final BirthDaysRepository birthDaysRepository;
 
 
-    public MessageHandle(TugBot bot, AuthUserService authUserService) {
+    public MessageHandle(TugBot bot, AuthUserService authUserService, BirthDaysRepository birthDaysRepository) {
         this.bot = bot;
         this.authUserService = authUserService;
+        this.birthDaysRepository = birthDaysRepository;
     }
 
     public void handle(Message message) {
@@ -25,7 +29,13 @@ public class MessageHandle {
             String fullName = message.getChat().getFirstName() + " " + message.getChat().getLastName();
             authUserService.createUser(message, fullName);
             bot.sendMessage(chatId, "Assalomu alaykum. " + fullName + " 😊 \nSiz Ro`yhatdan o`tmagansiz. Iltimos, menga ismingizni yuboring 👇👇👇👇");
-        } else if (message.getText().equals("/change_name")) {
+        } else if (message.getText().equals("/addbirthday")) {
+            AuthUser authUser = authUserService.getAuthUser(chatId);
+            authUser.setState(State.INPUTNBIRTHDAY);
+            authUserService.saveAuthUser(authUser);
+            bot.sendMessage(chatId, "Yaxshi! Menga tug'ilgan haqida ma'lumotni bitta habarda quyidagi na'muna asosida yuboring" +
+                    "\nMisol uchun: Aliyev Ali; kk.oo.yyyy");
+        } else if (message.getText().equals("/changename")) {
             AuthUser authUser = authUserService.getAuthUser(chatId);
             authUser.setState(State.FULLNAME);
             authUserService.saveAuthUser(authUser);
@@ -43,8 +53,22 @@ public class MessageHandle {
                     authUserService.saveAuthUser(authUser);
                     bot.sendMessage(chatId, "Tabriklaymiz! 🎉. Sizni men " + message.getText() + " nom bilan saqladim.\nTugilgan kunni aniqlasam sizga darhol xabar beraman 😊");
                 }
+                case INPUTNBIRTHDAY -> {
+                    String text = message.getText();
+                    String[] split = text.split(";");
+                    Birthdays tempBirthday = new Birthdays();
+                    tempBirthday.setBirthDayOwner(split[0].trim());
+                    tempBirthday.setDate(split[1].trim());
+                    System.out.println("Tugilgan kun qoshildi: " + tempBirthday);
+                    birthDaysRepository.save(tempBirthday);
+                    authUser.setState(State.REGISTERED);
+                    authUserService.saveAuthUser(authUser);
+                    bot.sendMessage(chatId, "Zo'r 🎉. Men " + tempBirthday.getBirthDayOwner() +
+                            "ning tugilgan kunini " + tempBirthday.getDate() +
+                            " sana bilan saqladim.\nTug'ilgan kuni kelganda xabar beraman");
+                }
                 case REGISTERED, OK -> {
-                    bot.sendMessage(chatId, "Xozirda tug'ilgan kunlar mavjud emas 🎉.\nTugilgan kunni aniqlasam sizga darhol xabar beraman 😊");
+                    bot.sendMessage(chatId, "Xozirda tug'ilgan kunlar mavjud emas 🎉.\nTug'ilgan kunni aniqlasam sizga darhol xabar beraman 😊");
                 }
             }
         }

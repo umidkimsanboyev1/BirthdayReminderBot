@@ -18,12 +18,12 @@ public class TimeService {
 
     public TimeService(BirthDaysRepository birthDaysRepository, AuthUserRepository authUserRepository, TugBot bot) {
         this.bot = bot;
-        List<Birthdays> birthdaysList = birthDaysRepository.findBirthdaysByCongratulatedFalse();
-        List<AuthUser> users = authUserRepository.findAuthUserByState(State.REGISTERED);
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                List<Birthdays> birthdaysList = birthDaysRepository.findBirthdaysByCongratulatedFalse();
+                List<AuthUser> users = authUserRepository.findAuthUserByState(State.REGISTERED);
                 checkBirthdays(birthdaysList, users);
             }
         }, getNineAM(), 24 * 60 * 60 * 1000);
@@ -42,7 +42,7 @@ public class TimeService {
     private void checkBirthdays(List<Birthdays> birthdaysList, List<AuthUser> users) {
         System.out.println("vazifaga kirishildi");
         System.out.println(birthdaysList);
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
         String today = sdf.format(new Date());
         System.out.println(today);
         for (Birthdays birthday : birthdaysList) {
@@ -51,7 +51,7 @@ public class TimeService {
                 for (AuthUser user : users) {
                     bot.sendMessage(Long.valueOf(user.getChatId()),
                             "Salom " + user.getFullName() +
-                            ".\n Bugun " + today + ". " + birthday.getBirthDayOwner() +
+                            ".\nBugun " + today + ". " + birthday.getBirthDayOwner() +
                             "ning tavallud topgan kuni 🎉🎉🎉\n" +
                             "Tabriklash esdan chiqmasin ‼. \n" +
                             "Yana tavallud kun bo'lsa xabar beraman 😊");
